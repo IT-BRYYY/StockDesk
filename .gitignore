@@ -10,6 +10,9 @@ target/
 *.db-wal
 *.db-shm
 
+# Logs
+*.log
+
 ### IntelliJ IDEA ###
 .idea/modules.xml
 .idea/jarRepositories.xml
