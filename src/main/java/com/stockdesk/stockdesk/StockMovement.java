@@ -14,13 +14,15 @@ public class StockMovement {
     private final LocalDateTime createdAt;
 
     public StockMovement(int id, int productId, String product,
-                         String type, int quantity) {
+                         String type, int quantity,
+                         LocalDateTime createdAt) {
+
         this.id = id;
         this.productId = productId;
         this.product = product;
         this.type = type;
         this.quantity = quantity;
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = createdAt;
     }
 
     public int getId() {

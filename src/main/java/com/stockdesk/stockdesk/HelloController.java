@@ -11,20 +11,22 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 
+import java.sql.SQLException;
+
 public class HelloController {
 
     @FXML private TableView<Product> productTable;
     @FXML private TableView<StockMovement> movementTable;
     @FXML private TextField searchField;
 
+    private final StockDeskRepository repository =
+            new StockDeskRepository();
+
     private final ObservableList<Product> products =
             FXCollections.observableArrayList();
 
     private final ObservableList<StockMovement> movements =
             FXCollections.observableArrayList();
-
-    private int nextProductId = 1;
-    private int nextMovementId = 1;
 
     @FXML
     public void initialize() {
@@ -55,17 +57,28 @@ public class HelloController {
                                     || product.getCategory().toLowerCase()
                                     .contains(keyword));
                 });
+
+        reloadData();
     }
 
     private <T> void setupColumns(
             TableView<T> table, String... properties) {
 
         for (int i = 0; i < properties.length; i++) {
-
-            TableColumn<T, ?> column = table.getColumns().get(i);
+            TableColumn<T, ?> column =
+                    table.getColumns().get(i);
 
             column.setCellValueFactory(
                     new PropertyValueFactory<>(properties[i]));
+        }
+    }
+
+    private void reloadData() {
+        try {
+            products.setAll(repository.findAllProducts());
+            movements.setAll(repository.findAllMovements());
+        } catch (SQLException e) {
+            showAlert("Database Error", e.getMessage());
         }
     }
 
@@ -74,9 +87,19 @@ public class HelloController {
 
         Product product = showProductDialog(null);
 
-        if (product != null) {
-            products.add(product);
-            nextProductId++;
+        if (product == null) return;
+
+        try {
+            repository.addProduct(
+                    product.getName(),
+                    product.getCategory(),
+                    product.getQuantity(),
+                    product.getPrice());
+
+            reloadData();
+
+        } catch (SQLException e) {
+            showAlert("Add Product Failed", e.getMessage());
         }
     }
 
@@ -87,19 +110,21 @@ public class HelloController {
                 productTable.getSelectionModel().getSelectedItem();
 
         if (selected == null) {
-            showAlert("Select a product first.");
+            showAlert("Selection Required",
+                    "Select a product to edit.");
             return;
         }
 
         Product updated = showProductDialog(selected);
 
-        if (updated != null) {
-            selected.setName(updated.getName());
-            selected.setCategory(updated.getCategory());
-            selected.setQuantity(updated.getQuantity());
-            selected.setPrice(updated.getPrice());
+        if (updated == null) return;
 
-            productTable.refresh();
+        try {
+            repository.updateProduct(updated);
+            reloadData();
+
+        } catch (SQLException e) {
+            showAlert("Edit Failed", e.getMessage());
         }
     }
 
@@ -110,20 +135,31 @@ public class HelloController {
                 productTable.getSelectionModel().getSelectedItem();
 
         if (selected == null) {
-            showAlert("Select a product first.");
+            showAlert("Selection Required",
+                    "Select a product to delete.");
             return;
         }
 
         Alert confirmation = new Alert(
                 Alert.AlertType.CONFIRMATION,
-                "Delete " + selected.getName() + "?",
+                "Delete " + selected.getName() + "?\n"
+                        + "Existing movement history will be preserved.",
                 ButtonType.OK, ButtonType.CANCEL);
 
-        confirmation.showAndWait().ifPresent(result -> {
-            if (result == ButtonType.OK) {
-                products.remove(selected);
-            }
-        });
+        confirmation.setTitle("Delete Product");
+
+        if (confirmation.showAndWait().orElse(
+                ButtonType.CANCEL) != ButtonType.OK) {
+            return;
+        }
+
+        try {
+            repository.deleteProduct(selected.getId());
+            reloadData();
+
+        } catch (SQLException e) {
+            showAlert("Delete Failed", e.getMessage());
+        }
     }
 
     private Product showProductDialog(Product existing) {
@@ -131,6 +167,7 @@ public class HelloController {
         boolean editing = existing != null;
 
         Dialog<Product> dialog = new Dialog<>();
+
         dialog.setTitle(editing ? "Edit Product" : "Add Product");
         dialog.setHeaderText("Product Information");
 
@@ -152,6 +189,9 @@ public class HelloController {
                     String.valueOf(existing.getQuantity()));
             price.setText(
                     String.valueOf(existing.getPrice()));
+
+            // Quantity must only change through stock movements.
+            quantity.setDisable(true);
         }
 
         GridPane grid = new GridPane();
@@ -172,19 +212,18 @@ public class HelloController {
         save.addEventFilter(ActionEvent.ACTION, event -> {
             try {
                 validateProduct(name, category, quantity, price);
-            } catch (IllegalArgumentException ex) {
+            } catch (IllegalArgumentException e) {
                 event.consume();
-                showAlert(ex.getMessage());
+                showAlert("Invalid Product", e.getMessage());
             }
         });
 
         dialog.setResultConverter(button -> {
-            if (button != saveType) {
-                return null;
-            }
+
+            if (button != saveType) return null;
 
             return new Product(
-                    editing ? existing.getId() : nextProductId,
+                    editing ? existing.getId() : 0,
                     name.getText().trim(),
                     category.getText().trim(),
                     Integer.parseInt(quantity.getText().trim()),
@@ -211,9 +250,11 @@ public class HelloController {
             if (qty < 0 || !Double.isFinite(amount) || amount < 0) {
                 throw new NumberFormatException();
             }
-        } catch (NumberFormatException ex) {
+
+        } catch (NumberFormatException e) {
             throw new IllegalArgumentException(
-                    "Enter a valid quantity and price.");
+                    "Quantity must be a non-negative whole number, "
+                            + "and price must be a valid non-negative number.");
         }
     }
 
@@ -230,12 +271,12 @@ public class HelloController {
     private void handleMovement(String type) {
 
         if (products.isEmpty()) {
-            showAlert("Add a product before recording movements.");
+            showAlert("No Products",
+                    "Add a product before recording stock movements.");
             return;
         }
 
-        Dialog<StockMovement> dialog = new Dialog<>();
-
+        Dialog<MovementInput> dialog = new Dialog<>();
         dialog.setTitle("Stock " + type);
         dialog.setHeaderText("Record Stock " + type);
 
@@ -263,13 +304,13 @@ public class HelloController {
             @Override
             protected void updateItem(Product product, boolean empty) {
                 super.updateItem(product, empty);
-                setText(empty || product == null ? null
-                        : product.getName());
+                setText(empty || product == null
+                        ? null : product.getName());
             }
         });
 
         TextField quantityField = new TextField();
-        quantityField.setPromptText("Enter quantity");
+        quantityField.setPromptText("Positive whole number");
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
@@ -290,79 +331,71 @@ public class HelloController {
 
             if (selected == null) {
                 event.consume();
-                showAlert("Please select a product.");
+                showAlert("Invalid Selection", "Select a product.");
                 return;
             }
 
             try {
-                int quantity = Integer.parseInt(
+                int amount = Integer.parseInt(
                         quantityField.getText().trim());
 
-                if (quantity <= 0) {
+                if (amount <= 0) {
                     throw new NumberFormatException();
                 }
 
-                if ("OUT".equals(type)
-                        && quantity > selected.getQuantity()) {
+                if (type.equals("OUT")
+                        && amount > selected.getQuantity()) {
                     event.consume();
-                    showAlert("Insufficient stock. Available: "
-                            + selected.getQuantity());
+                    showAlert("Insufficient Stock",
+                            "Available: " + selected.getQuantity());
                     return;
                 }
 
-                if ("IN".equals(type)
-                        && (long) selected.getQuantity() + quantity
+                if (type.equals("IN")
+                        && (long) selected.getQuantity() + amount
                         > Integer.MAX_VALUE) {
                     event.consume();
-                    showAlert("Quantity exceeds the supported limit.");
+                    showAlert("Stock Limit",
+                            "The quantity exceeds the supported limit.");
                 }
 
-            } catch (NumberFormatException ex) {
+            } catch (NumberFormatException e) {
                 event.consume();
-                showAlert("Enter a positive whole-number quantity.");
+                showAlert("Invalid Quantity",
+                        "Enter a positive whole number.");
             }
         });
 
         dialog.setResultConverter(button -> {
+            if (button != saveType) return null;
 
-            if (button != saveType) {
-                return null;
-            }
-
-            Product selected = productBox.getValue();
-            int quantity = Integer.parseInt(
-                    quantityField.getText().trim());
-
-            if ("IN".equals(type)) {
-                selected.setQuantity(
-                        selected.getQuantity() + quantity);
-            } else {
-                selected.setQuantity(
-                        selected.getQuantity() - quantity);
-            }
-
-            productTable.refresh();
-
-            return new StockMovement(
-                    nextMovementId++,
-                    selected.getId(),
-                    selected.getName(),
-                    type,
-                    quantity);
+            return new MovementInput(
+                    productBox.getValue().getId(),
+                    Integer.parseInt(quantityField.getText().trim()));
         });
 
-        StockMovement movement =
-                dialog.showAndWait().orElse(null);
+        MovementInput input = dialog.showAndWait().orElse(null);
 
-        if (movement != null) {
-            movements.add(0, movement);
+        if (input == null) return;
+
+        try {
+            repository.recordMovement(
+                    input.productId(), type, input.quantity());
+
+            reloadData();
+
+        } catch (SQLException e) {
+            showAlert("Stock Movement Failed", e.getMessage());
         }
     }
 
-    private void showAlert(String message) {
+    private record MovementInput(int productId, int quantity) {
+    }
+
+    private void showAlert(String title, String message) {
 
         Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle("StockDesk");
+        alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
