@@ -4,119 +4,243 @@
 <?import javafx.scene.layout.*?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.stockdesk.stockdesk.HelloController">
+            fx:id="appRoot"
+            fx:controller="com.stockdesk.stockdesk.HelloController"
+            styleClass="app-root,light-theme">
 
     <top>
-        <VBox spacing="5"
-              style="-fx-background-color: #1e293b;">
+        <HBox styleClass="app-header"
+              alignment="CENTER_LEFT"
+              spacing="15">
 
-            <padding>
-                <Insets top="22" bottom="22"
-                        left="25" right="25"/>
-            </padding>
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="StockDesk"
+                       styleClass="brand-title"/>
+                <Label text="Inventory &amp; Stock Movement Tracker"
+                       styleClass="brand-subtitle"/>
+            </VBox>
 
-            <Label text="StockDesk"
-                   style="-fx-text-fill: white;
-                          -fx-font-size: 26px;
-                          -fx-font-weight: bold;"/>
+            <Label text="Appearance:"
+                   styleClass="header-label"/>
 
-            <Label text="Inventory &amp; Stock Movement Tracker"
-                   style="-fx-text-fill: #cbd5e1;
-                          -fx-font-size: 13px;"/>
-        </VBox>
+            <Button fx:id="themeButton"
+                    text="Dark Mode"
+                    styleClass="theme-toggle"
+                    onAction="#handleToggleTheme"/>
+        </HBox>
     </top>
 
     <center>
-        <TabPane tabClosingPolicy="UNAVAILABLE">
+        <TabPane fx:id="mainTabs"
+                 tabClosingPolicy="UNAVAILABLE">
 
             <tabs>
-                <Tab text="Products">
+
+                <!-- Dashboard -->
+                <Tab text="Dashboard">
                     <content>
-                        <VBox spacing="15">
+                        <VBox spacing="20"
+                              styleClass="content-area">
 
-                            <padding>
-                                <Insets top="20" bottom="20"
-                                        left="20" right="20"/>
-                            </padding>
+                            <VBox spacing="5">
+                                <Label text="Inventory Overview"
+                                       styleClass="page-title"/>
+                                <Label text="A quick summary of your current inventory."
+                                       styleClass="muted-text"/>
+                            </VBox>
 
-                            <Label text="Product Management"
-                                   style="-fx-font-size: 20px;
-                                          -fx-font-weight: bold;"/>
+                            <GridPane hgap="15" vgap="15">
 
-                            <HBox spacing="10">
+                                <columnConstraints>
+                                    <ColumnConstraints percentWidth="50"/>
+                                    <ColumnConstraints percentWidth="50"/>
+                                </columnConstraints>
+
+                                <VBox GridPane.columnIndex="0"
+                                      GridPane.rowIndex="0"
+                                      styleClass="stat-card">
+                                    <Label text="TOTAL PRODUCTS"
+                                           styleClass="stat-label"/>
+                                    <Label fx:id="totalProductsLabel"
+                                           text="0"
+                                           styleClass="stat-value"/>
+                                </VBox>
+
+                                <VBox GridPane.columnIndex="1"
+                                      GridPane.rowIndex="0"
+                                      styleClass="stat-card">
+                                    <Label text="TOTAL STOCK UNITS"
+                                           styleClass="stat-label"/>
+                                    <Label fx:id="totalStockLabel"
+                                           text="0"
+                                           styleClass="stat-value"/>
+                                </VBox>
+
+                                <VBox GridPane.columnIndex="0"
+                                      GridPane.rowIndex="1"
+                                      styleClass="stat-card">
+                                    <Label text="INVENTORY VALUE"
+                                           styleClass="stat-label"/>
+                                    <Label fx:id="inventoryValueLabel"
+                                           text="₱0.00"
+                                           styleClass="stat-value"/>
+                                </VBox>
+
+                                <VBox GridPane.columnIndex="1"
+                                      GridPane.rowIndex="1"
+                                      styleClass="stat-card">
+                                    <Label text="LOW STOCK PRODUCTS"
+                                           styleClass="stat-label"/>
+                                    <Label fx:id="lowStockLabel"
+                                           text="0"
+                                           styleClass="stat-value,low-stock-text"/>
+                                </VBox>
+                            </GridPane>
+
+                            <VBox spacing="12"
+                                  styleClass="panel"
+                                  VBox.vgrow="ALWAYS">
+                                <Label text="Inventory Health"
+                                       styleClass="section-title"/>
+                                <Label fx:id="inventoryHealthLabel"
+                                       text="No products added yet."
+                                       styleClass="muted-text"
+                                       wrapText="true"/>
+                                <Label text="Low stock means 5 units or fewer."
+                                       styleClass="muted-text"/>
+                                <Button text="View Products"
+                                        styleClass="primary-button"
+                                        onAction="#handleViewProducts"/>
+                            </VBox>
+
+                        </VBox>
+                    </content>
+                </Tab>
+
+                <!-- Products -->
+                <Tab fx:id="productsTab" text="Products">
+                    <content>
+                        <VBox spacing="18"
+                              styleClass="content-area">
+
+                            <VBox spacing="5">
+                                <Label text="Product Management"
+                                       styleClass="page-title"/>
+                                <Label text="Manage products, prices, and inventory details."
+                                       styleClass="muted-text"/>
+                            </VBox>
+
+                            <HBox spacing="10"
+                                  alignment="CENTER_LEFT">
+
                                 <TextField fx:id="searchField"
-                                           promptText="Search products..."
+                                           promptText="Search by name or category..."
                                            HBox.hgrow="ALWAYS"/>
 
-
-                                <Button text="Add Product"
+                                <Button text="+ Add Product"
+                                        styleClass="primary-button"
                                         onAction="#handleAddProduct"/>
 
                                 <Button text="Edit"
+                                        styleClass="secondary-button"
                                         onAction="#handleEditProduct"/>
 
                                 <Button text="Delete"
+                                        styleClass="danger-button"
                                         onAction="#handleDeleteProduct"/>
-
                             </HBox>
 
-                            <TableView fx:id="productTable"
-                                       VBox.vgrow="ALWAYS">
-                                <columns>
-                                    <TableColumn text="ID" prefWidth="80"/>
-                                    <TableColumn text="Product Name" prefWidth="250"/>
-                                    <TableColumn text="Category" prefWidth="170"/>
-                                    <TableColumn text="Quantity" prefWidth="120"/>
-                                    <TableColumn text="Price" prefWidth="120"/>
-                                </columns>
-                            </TableView>
+                            <VBox spacing="12"
+                                  styleClass="panel"
+                                  VBox.vgrow="ALWAYS">
+
+                                <Label text="Product Inventory"
+                                       styleClass="section-title"/>
+
+                                <TableView fx:id="productTable"
+                                           VBox.vgrow="ALWAYS">
+
+                                    <columns>
+                                        <TableColumn text="ID"
+                                                     prefWidth="65"/>
+                                        <TableColumn text="Product Name"
+                                                     prefWidth="260"/>
+                                        <TableColumn text="Category"
+                                                     prefWidth="190"/>
+                                        <TableColumn text="Quantity"
+                                                     prefWidth="130"/>
+                                        <TableColumn text="Price"
+                                                     prefWidth="140"/>
+                                    </columns>
+
+                                </TableView>
+                            </VBox>
 
                         </VBox>
                     </content>
                 </Tab>
 
+                <!-- Stock Movements -->
                 <Tab text="Stock Movements">
                     <content>
-                        <VBox spacing="15">
+                        <VBox spacing="18"
+                              styleClass="content-area">
 
-                            <padding>
-                                <Insets top="20" bottom="20"
-                                        left="20" right="20"/>
-                            </padding>
+                            <VBox spacing="5">
+                                <Label text="Stock Movements"
+                                       styleClass="page-title"/>
+                                <Label text="Record incoming and outgoing inventory."
+                                       styleClass="muted-text"/>
+                            </VBox>
 
-                            <Label text="Stock Movement History"
-                                   style="-fx-font-size: 20px;
-                                          -fx-font-weight: bold;"/>
+                            <HBox spacing="10">
+                                <Button text="+ Stock IN"
+                                        styleClass="success-button"
+                                        onAction="#handleStockIn"/>
+                                <Button text="- Stock OUT"
+                                        styleClass="danger-button"
+                                        onAction="#handleStockOut"/>
+                            </HBox>
 
-                            <Button text="Stock IN" onAction="#handleStockIn"/>
-                            <Button text="Stock OUT" onAction="#handleStockOut"/>
+                            <VBox spacing="12"
+                                  styleClass="panel"
+                                  VBox.vgrow="ALWAYS">
 
-                            <TableView fx:id="movementTable" VBox.vgrow="ALWAYS">
-                                <columns>
-                                    <TableColumn text="Movement ID" prefWidth="120"/>
-                                    <TableColumn text="Product" prefWidth="220"/>
-                                    <TableColumn text="Type" prefWidth="120"/>
-                                    <TableColumn text="Quantity" prefWidth="120"/>
-                                    <TableColumn text="Date" prefWidth="180"/>
-                                </columns>
-                            </TableView>
+                                <Label text="Transaction History"
+                                       styleClass="section-title"/>
+
+                                <TableView fx:id="movementTable"
+                                           VBox.vgrow="ALWAYS">
+
+                                    <columns>
+                                        <TableColumn text="Movement ID"
+                                                     prefWidth="125"/>
+                                        <TableColumn text="Product"
+                                                     prefWidth="260"/>
+                                        <TableColumn text="Type"
+                                                     prefWidth="110"/>
+                                        <TableColumn text="Quantity"
+                                                     prefWidth="120"/>
+                                        <TableColumn text="Date"
+                                                     prefWidth="200"/>
+                                    </columns>
+
+                                </TableView>
+                            </VBox>
 
                         </VBox>
                     </content>
                 </Tab>
-            </tabs>
 
+            </tabs>
         </TabPane>
     </center>
 
     <bottom>
-        <HBox style="-fx-background-color: #f1f5f9;">
-            <padding>
-                <Insets top="10" bottom="10" left="20" right="20"/>
-            </padding>
-
-            <Label text="StockDesk v1.0 | JavaFX Desktop Application"
-                   style="-fx-text-fill: #64748b;"/>
+        <HBox styleClass="app-footer"
+              alignment="CENTER_LEFT">
+            <Label text="StockDesk v1.1  |  JavaFX + SQLite  |  Local Inventory Management"
+                   styleClass="footer-text"/>
         </HBox>
     </bottom>
 
