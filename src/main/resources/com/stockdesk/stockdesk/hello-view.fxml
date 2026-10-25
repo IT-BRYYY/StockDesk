@@ -48,7 +48,7 @@
                                            promptText="Search products..."
                                            HBox.hgrow="ALWAYS"/>
 
-                                <Button text="Add Product"/>
+                                <Button text="Add Product" onAction="#handleAddProduct"/>
                                 <Button text="Edit"/>
                                 <Button text="Delete"/>
                             </HBox>
