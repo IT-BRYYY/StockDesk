@@ -7,10 +7,14 @@ import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
+import javafx.scene.layout.*;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 import java.sql.SQLException;
 import java.util.Locale;
@@ -90,6 +94,10 @@ public class HelloController {
 
         reloadData();
     }
+
+    // ==========================================
+    // TABLE CONFIGURATION
+    // ==========================================
 
     private <T> void setupColumns(
             TableView<T> table, String... properties) {
@@ -190,6 +198,10 @@ public class HelloController {
                 });
     }
 
+    // ==========================================
+    // DASHBOARD
+    // ==========================================
+
     private String formatMoney(double value) {
         return String.format(Locale.US, "₱%,.2f", value);
     }
@@ -243,7 +255,7 @@ public class HelloController {
     }
 
     // ==========================================
-    // THEME MANAGEMENT
+    // LIGHT / DARK THEME
     // ==========================================
 
     @FXML
@@ -265,32 +277,6 @@ public class HelloController {
 
         themeButton.setText(
                 darkMode ? "Light Mode" : "Dark Mode");
-    }
-
-    // ==========================================
-    // MODERN DIALOG STYLING
-    // ==========================================
-
-    private void styleDialog(Dialog<?> dialog) {
-
-        DialogPane pane = dialog.getDialogPane();
-
-        pane.getStylesheets().add(
-                Objects.requireNonNull(
-                        HelloApplication.class.getResource(
-                                "stockdesk.css")
-                ).toExternalForm()
-        );
-
-        pane.getStyleClass().removeAll(
-                "light-theme", "dark-theme");
-
-        pane.getStyleClass().add(
-                darkMode ? "dark-theme" : "light-theme");
-
-        dialog.initOwner(appRoot.getScene().getWindow());
-
-        pane.setPrefWidth(460);
     }
 
     @FXML
@@ -315,6 +301,32 @@ public class HelloController {
 
             showAlert("Database Error", e.getMessage());
         }
+    }
+
+    // ==========================================
+    // STANDARD FORM DIALOG STYLING
+    // ==========================================
+
+    private void styleDialog(Dialog<?> dialog) {
+
+        DialogPane pane = dialog.getDialogPane();
+
+        pane.getStylesheets().add(
+                Objects.requireNonNull(
+                        HelloApplication.class.getResource(
+                                "stockdesk.css")
+                ).toExternalForm()
+        );
+
+        pane.getStyleClass().removeAll(
+                "light-theme", "dark-theme");
+
+        pane.getStyleClass().add(
+                darkMode ? "dark-theme" : "light-theme");
+
+        dialog.initOwner(appRoot.getScene().getWindow());
+
+        pane.setPrefWidth(460);
     }
 
     // ==========================================
@@ -413,7 +425,7 @@ public class HelloController {
     }
 
     // ==========================================
-    // ADD / EDIT PRODUCT DIALOG
+    // ADD / EDIT PRODUCT FORM
     // ==========================================
 
     private Product showProductDialog(Product existing) {
@@ -541,7 +553,7 @@ public class HelloController {
     }
 
     // ==========================================
-    // STOCK MOVEMENTS
+    // STOCK IN / STOCK OUT
     // ==========================================
 
     @FXML
@@ -718,19 +730,69 @@ public class HelloController {
     }
 
     // ==========================================
-    // MODERN VALIDATION ALERTS
+    // MODERN CUSTOM VALIDATION DIALOG
     // ==========================================
 
     private void showAlert(String title, String message) {
 
-        Alert alert = new Alert(Alert.AlertType.WARNING);
+        Stage dialog = new Stage();
 
-        alert.setTitle(title);
-        alert.setHeaderText(title);
-        alert.setContentText(message);
+        if (appRoot.getScene() != null) {
+            dialog.initOwner(appRoot.getScene().getWindow());
+        }
 
-        styleDialog(alert);
+        dialog.initModality(Modality.WINDOW_MODAL);
+        dialog.initStyle(StageStyle.UNDECORATED);
+        dialog.setResizable(false);
 
-        alert.showAndWait();
+        Label iconLabel = new Label("!");
+        StackPane iconBox = new StackPane(iconLabel);
+        iconBox.getStyleClass().add("modern-alert-icon");
+
+        Label titleLabel = new Label(title);
+        titleLabel.getStyleClass().add("modern-alert-title");
+        titleLabel.setWrapText(true);
+
+        Label messageLabel = new Label(message);
+        messageLabel.getStyleClass().add("modern-alert-message");
+        messageLabel.setWrapText(true);
+        messageLabel.setMaxWidth(330);
+
+        VBox textBox = new VBox(7, titleLabel, messageLabel);
+
+        HBox content = new HBox(16, iconBox, textBox);
+        content.setAlignment(Pos.CENTER_LEFT);
+
+        Button closeButton = new Button("Got it");
+        closeButton.getStyleClass().add("modern-alert-button");
+        closeButton.setDefaultButton(true);
+        closeButton.setCancelButton(true);
+        closeButton.setOnAction(event -> dialog.close());
+
+        HBox footer = new HBox(closeButton);
+        footer.setAlignment(Pos.CENTER_RIGHT);
+
+        VBox root = new VBox(24, content, footer);
+        root.getStyleClass().addAll(
+                "modern-alert",
+                darkMode ? "dark-theme" : "light-theme"
+        );
+
+        root.setPadding(new Insets(24));
+
+        Scene scene = new Scene(root, 440, 190);
+
+        scene.getStylesheets().add(
+                Objects.requireNonNull(
+                        HelloApplication.class.getResource(
+                                "stockdesk.css")
+                ).toExternalForm()
+        );
+
+        dialog.setScene(scene);
+
+        dialog.setOnShown(event -> closeButton.requestFocus());
+
+        dialog.showAndWait();
     }
 }

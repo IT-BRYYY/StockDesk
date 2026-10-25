@@ -390,3 +390,51 @@
 .dialog-pane .combo-box-popup .list-cell:hover {
     -fx-background-color: -app-hover;
 }
+
+
+/* Modern validation dialogs */
+
+.modern-alert {
+    -fx-background-color: -app-surface;
+    -fx-padding: 22;
+}
+
+.modern-alert-title {
+    -fx-font-size: 19px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -app-text;
+}
+
+.modern-alert-message {
+    -fx-font-size: 13px;
+    -fx-text-fill: -app-muted;
+}
+
+.modern-alert-icon {
+    -fx-background-color: #fef3c7;
+    -fx-background-radius: 12;
+    -fx-alignment: center;
+    -fx-min-width: 48px;
+    -fx-min-height: 48px;
+    -fx-max-width: 48px;
+    -fx-max-height: 48px;
+}
+
+.modern-alert-icon .label {
+    -fx-text-fill: #b45309;
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+.modern-alert-button {
+    -fx-background-color: #2563eb;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-padding: 10 25;
+    -fx-cursor: hand;
+}
+
+.modern-alert-button:hover {
+    -fx-background-color: #1d4ed8;
+}
