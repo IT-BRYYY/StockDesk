@@ -13,82 +13,60 @@ import javafx.scene.layout.GridPane;
 
 public class HelloController {
 
-    @FXML
-    private TableView<Product> productTable;
-
-    @FXML
-    private TextField searchField;
+    @FXML private TableView<Product> productTable;
+    @FXML private TableView<StockMovement> movementTable;
+    @FXML private TextField searchField;
 
     private final ObservableList<Product> products =
             FXCollections.observableArrayList();
 
-    private FilteredList<Product> filteredProducts;
+    private final ObservableList<StockMovement> movements =
+            FXCollections.observableArrayList();
 
-    private int nextId = 1;
+    private int nextProductId = 1;
+    private int nextMovementId = 1;
 
     @FXML
     public void initialize() {
 
-        TableColumn<Product, Integer> idColumn =
-                (TableColumn<Product, Integer>)
-                        productTable.getColumns().get(0);
+        setupColumns(productTable,
+                "id", "name", "category", "quantity", "price");
 
-        TableColumn<Product, String> nameColumn =
-                (TableColumn<Product, String>)
-                        productTable.getColumns().get(1);
+        setupColumns(movementTable,
+                "id", "product", "type", "quantity", "date");
 
-        TableColumn<Product, String> categoryColumn =
-                (TableColumn<Product, String>)
-                        productTable.getColumns().get(2);
+        FilteredList<Product> filtered =
+                new FilteredList<>(products, p -> true);
 
-        TableColumn<Product, Integer> quantityColumn =
-                (TableColumn<Product, Integer>)
-                        productTable.getColumns().get(3);
-
-        TableColumn<Product, Double> priceColumn =
-                (TableColumn<Product, Double>)
-                        productTable.getColumns().get(4);
-
-        idColumn.setCellValueFactory(
-                new PropertyValueFactory<>("id"));
-
-        nameColumn.setCellValueFactory(
-                new PropertyValueFactory<>("name"));
-
-        categoryColumn.setCellValueFactory(
-                new PropertyValueFactory<>("category"));
-
-        quantityColumn.setCellValueFactory(
-                new PropertyValueFactory<>("quantity"));
-
-        priceColumn.setCellValueFactory(
-                new PropertyValueFactory<>("price"));
-
-        filteredProducts = new FilteredList<>(products, p -> true);
-
-        productTable.setItems(filteredProducts);
+        productTable.setItems(filtered);
+        movementTable.setItems(movements);
 
         searchField.textProperty().addListener(
-                (observable, oldValue, newValue) -> {
+                (obs, oldValue, newValue) -> {
 
                     String keyword = newValue == null
                             ? ""
-                            : newValue.toLowerCase().trim();
+                            : newValue.trim().toLowerCase();
 
-                    filteredProducts.setPredicate(product -> {
-
-                        if (keyword.isEmpty()) {
-                            return true;
-                        }
-
-                        return product.getName()
-                                .toLowerCase()
-                                .contains(keyword)
-                                || product.getCategory()
-                                .toLowerCase()
-                                .contains(keyword);
-                    });
+                    filtered.setPredicate(product ->
+                            keyword.isEmpty()
+                                    || product.getName().toLowerCase()
+                                    .contains(keyword)
+                                    || product.getCategory().toLowerCase()
+                                    .contains(keyword));
                 });
+    }
+
+    private <T> void setupColumns(
+            TableView<T> table, String... properties) {
+
+        for (int i = 0; i < properties.length; i++) {
+
+            TableColumn<T, ?> column = table.getColumns().get(i);
+
+            column.setCellValueFactory(
+                    new PropertyValueFactory<>(properties[i]));
+        }
     }
 
     @FXML
@@ -98,7 +76,7 @@ public class HelloController {
 
         if (product != null) {
             products.add(product);
-            nextId++;
+            nextProductId++;
         }
     }
 
@@ -109,8 +87,7 @@ public class HelloController {
                 productTable.getSelectionModel().getSelectedItem();
 
         if (selected == null) {
-            showAlert("No Product Selected",
-                    "Please select a product to edit.");
+            showAlert("Select a product first.");
             return;
         }
 
@@ -133,22 +110,17 @@ public class HelloController {
                 productTable.getSelectionModel().getSelectedItem();
 
         if (selected == null) {
-            showAlert("No Product Selected",
-                    "Please select a product to delete.");
+            showAlert("Select a product first.");
             return;
         }
 
         Alert confirmation = new Alert(
-                Alert.AlertType.CONFIRMATION);
+                Alert.AlertType.CONFIRMATION,
+                "Delete " + selected.getName() + "?",
+                ButtonType.OK, ButtonType.CANCEL);
 
-        confirmation.setTitle("Delete Product");
-        confirmation.setHeaderText("Delete " + selected.getName() + "?");
-        confirmation.setContentText(
-                "This action cannot be undone.");
-
-        confirmation.showAndWait().ifPresent(response -> {
-
-            if (response == ButtonType.OK) {
+        confirmation.showAndWait().ifPresent(result -> {
+            if (result == ButtonType.OK) {
                 products.remove(selected);
             }
         });
@@ -159,113 +131,240 @@ public class HelloController {
         boolean editing = existing != null;
 
         Dialog<Product> dialog = new Dialog<>();
-
         dialog.setTitle(editing ? "Edit Product" : "Add Product");
-        dialog.setHeaderText(editing
-                ? "Update Product Information"
-                : "Enter Product Information");
+        dialog.setHeaderText("Product Information");
 
-        ButtonType saveButton = new ButtonType(
+        ButtonType saveType = new ButtonType(
                 "Save", ButtonBar.ButtonData.OK_DONE);
 
         dialog.getDialogPane().getButtonTypes().addAll(
-                saveButton, ButtonType.CANCEL);
+                saveType, ButtonType.CANCEL);
 
-        TextField nameField = new TextField();
-        TextField categoryField = new TextField();
-        TextField quantityField = new TextField();
-        TextField priceField = new TextField();
+        TextField name = new TextField();
+        TextField category = new TextField();
+        TextField quantity = new TextField();
+        TextField price = new TextField();
 
         if (editing) {
-            nameField.setText(existing.getName());
-            categoryField.setText(existing.getCategory());
-            quantityField.setText(
+            name.setText(existing.getName());
+            category.setText(existing.getCategory());
+            quantity.setText(
                     String.valueOf(existing.getQuantity()));
-            priceField.setText(
+            price.setText(
                     String.valueOf(existing.getPrice()));
         }
 
         GridPane grid = new GridPane();
-
         grid.setHgap(10);
         grid.setVgap(10);
         grid.setPadding(new Insets(20));
 
-        grid.add(new Label("Product Name:"), 0, 0);
-        grid.add(nameField, 1, 0);
-
-        grid.add(new Label("Category:"), 0, 1);
-        grid.add(categoryField, 1, 1);
-
-        grid.add(new Label("Quantity:"), 0, 2);
-        grid.add(quantityField, 1, 2);
-
-        grid.add(new Label("Price:"), 0, 3);
-        grid.add(priceField, 1, 3);
+        grid.addRow(0, new Label("Name:"), name);
+        grid.addRow(1, new Label("Category:"), category);
+        grid.addRow(2, new Label("Quantity:"), quantity);
+        grid.addRow(3, new Label("Price:"), price);
 
         dialog.getDialogPane().setContent(grid);
 
         Button save = (Button)
-                dialog.getDialogPane().lookupButton(saveButton);
+                dialog.getDialogPane().lookupButton(saveType);
 
         save.addEventFilter(ActionEvent.ACTION, event -> {
-
             try {
-                String name = nameField.getText().trim();
-                String category = categoryField.getText().trim();
-
-                int quantity = Integer.parseInt(
-                        quantityField.getText().trim());
-
-                double price = Double.parseDouble(
-                        priceField.getText().trim());
-
-                if (name.isEmpty() || category.isEmpty()
-                        || quantity < 0 || !Double.isFinite(price)
-                        || price < 0) {
-
-                    throw new IllegalArgumentException();
-                }
-
-            } catch (IllegalArgumentException e) {
-
+                validateProduct(name, category, quantity, price);
+            } catch (IllegalArgumentException ex) {
                 event.consume();
-
-                showAlert("Invalid Input",
-                        "Enter a valid product name, category, "
-                                + "non-negative whole-number quantity, "
-                                + "and non-negative price.");
+                showAlert(ex.getMessage());
             }
         });
 
         dialog.setResultConverter(button -> {
-
-            if (button == saveButton) {
-
-                return new Product(
-                        editing ? existing.getId() : nextId,
-                        nameField.getText().trim(),
-                        categoryField.getText().trim(),
-                        Integer.parseInt(
-                                quantityField.getText().trim()),
-                        Double.parseDouble(
-                                priceField.getText().trim()));
+            if (button != saveType) {
+                return null;
             }
 
-            return null;
+            return new Product(
+                    editing ? existing.getId() : nextProductId,
+                    name.getText().trim(),
+                    category.getText().trim(),
+                    Integer.parseInt(quantity.getText().trim()),
+                    Double.parseDouble(price.getText().trim()));
         });
 
         return dialog.showAndWait().orElse(null);
     }
 
-    private void showAlert(String title, String message) {
+    private void validateProduct(
+            TextField name, TextField category,
+            TextField quantity, TextField price) {
+
+        if (name.getText().isBlank()
+                || category.getText().isBlank()) {
+            throw new IllegalArgumentException(
+                    "Name and category are required.");
+        }
+
+        try {
+            int qty = Integer.parseInt(quantity.getText().trim());
+            double amount = Double.parseDouble(price.getText().trim());
+
+            if (qty < 0 || !Double.isFinite(amount) || amount < 0) {
+                throw new NumberFormatException();
+            }
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException(
+                    "Enter a valid quantity and price.");
+        }
+    }
+
+    @FXML
+    private void handleStockIn() {
+        handleMovement("IN");
+    }
+
+    @FXML
+    private void handleStockOut() {
+        handleMovement("OUT");
+    }
+
+    private void handleMovement(String type) {
+
+        if (products.isEmpty()) {
+            showAlert("Add a product before recording movements.");
+            return;
+        }
+
+        Dialog<StockMovement> dialog = new Dialog<>();
+
+        dialog.setTitle("Stock " + type);
+        dialog.setHeaderText("Record Stock " + type);
+
+        ButtonType saveType = new ButtonType(
+                "Save", ButtonBar.ButtonData.OK_DONE);
+
+        dialog.getDialogPane().getButtonTypes().addAll(
+                saveType, ButtonType.CANCEL);
+
+        ComboBox<Product> productBox = new ComboBox<>(products);
+        productBox.setPromptText("Select product");
+        productBox.setMaxWidth(Double.MAX_VALUE);
+
+        productBox.setCellFactory(list -> new ListCell<>() {
+            @Override
+            protected void updateItem(Product product, boolean empty) {
+                super.updateItem(product, empty);
+                setText(empty || product == null ? null
+                        : product.getName() + " ("
+                          + product.getQuantity() + " available)");
+            }
+        });
+
+        productBox.setButtonCell(new ListCell<>() {
+            @Override
+            protected void updateItem(Product product, boolean empty) {
+                super.updateItem(product, empty);
+                setText(empty || product == null ? null
+                        : product.getName());
+            }
+        });
+
+        TextField quantityField = new TextField();
+        quantityField.setPromptText("Enter quantity");
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20));
+
+        grid.addRow(0, new Label("Product:"), productBox);
+        grid.addRow(1, new Label("Quantity:"), quantityField);
+
+        dialog.getDialogPane().setContent(grid);
+
+        Button save = (Button)
+                dialog.getDialogPane().lookupButton(saveType);
+
+        save.addEventFilter(ActionEvent.ACTION, event -> {
+
+            Product selected = productBox.getValue();
+
+            if (selected == null) {
+                event.consume();
+                showAlert("Please select a product.");
+                return;
+            }
+
+            try {
+                int quantity = Integer.parseInt(
+                        quantityField.getText().trim());
+
+                if (quantity <= 0) {
+                    throw new NumberFormatException();
+                }
+
+                if ("OUT".equals(type)
+                        && quantity > selected.getQuantity()) {
+                    event.consume();
+                    showAlert("Insufficient stock. Available: "
+                            + selected.getQuantity());
+                    return;
+                }
+
+                if ("IN".equals(type)
+                        && (long) selected.getQuantity() + quantity
+                        > Integer.MAX_VALUE) {
+                    event.consume();
+                    showAlert("Quantity exceeds the supported limit.");
+                }
+
+            } catch (NumberFormatException ex) {
+                event.consume();
+                showAlert("Enter a positive whole-number quantity.");
+            }
+        });
+
+        dialog.setResultConverter(button -> {
+
+            if (button != saveType) {
+                return null;
+            }
+
+            Product selected = productBox.getValue();
+            int quantity = Integer.parseInt(
+                    quantityField.getText().trim());
+
+            if ("IN".equals(type)) {
+                selected.setQuantity(
+                        selected.getQuantity() + quantity);
+            } else {
+                selected.setQuantity(
+                        selected.getQuantity() - quantity);
+            }
+
+            productTable.refresh();
+
+            return new StockMovement(
+                    nextMovementId++,
+                    selected.getId(),
+                    selected.getName(),
+                    type,
+                    quantity);
+        });
+
+        StockMovement movement =
+                dialog.showAndWait().orElse(null);
+
+        if (movement != null) {
+            movements.add(0, movement);
+        }
+    }
+
+    private void showAlert(String message) {
 
         Alert alert = new Alert(Alert.AlertType.WARNING);
-
-        alert.setTitle(title);
+        alert.setTitle("StockDesk");
         alert.setHeaderText(null);
         alert.setContentText(message);
-
         alert.showAndWait();
     }
 }

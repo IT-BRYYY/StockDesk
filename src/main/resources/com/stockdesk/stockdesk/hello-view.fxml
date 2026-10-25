@@ -88,12 +88,10 @@
                                    style="-fx-font-size: 20px;
                                           -fx-font-weight: bold;"/>
 
-                            <HBox spacing="10">
-                                <Button text="Stock IN"/>
-                                <Button text="Stock OUT"/>
-                            </HBox>
+                            <Button text="Stock IN" onAction="#handleStockIn"/>
+                            <Button text="Stock OUT" onAction="#handleStockOut"/>
 
-                            <TableView VBox.vgrow="ALWAYS">
+                            <TableView fx:id="movementTable" VBox.vgrow="ALWAYS">
                                 <columns>
                                     <TableColumn text="Movement ID" prefWidth="120"/>
                                     <TableColumn text="Product" prefWidth="220"/>
