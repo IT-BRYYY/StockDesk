@@ -48,9 +48,16 @@
                                            promptText="Search products..."
                                            HBox.hgrow="ALWAYS"/>
 
-                                <Button text="Add Product" onAction="#handleAddProduct"/>
-                                <Button text="Edit"/>
-                                <Button text="Delete"/>
+
+                                <Button text="Add Product"
+                                        onAction="#handleAddProduct"/>
+
+                                <Button text="Edit"
+                                        onAction="#handleEditProduct"/>
+
+                                <Button text="Delete"
+                                        onAction="#handleDeleteProduct"/>
+
                             </HBox>
 
                             <TableView fx:id="productTable"
