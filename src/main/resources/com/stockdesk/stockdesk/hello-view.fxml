@@ -1,0 +1,118 @@
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.stockdesk.stockdesk.HelloController">
+
+    <top>
+        <VBox spacing="5"
+              style="-fx-background-color: #1e293b;">
+
+            <padding>
+                <Insets top="22" bottom="22"
+                        left="25" right="25"/>
+            </padding>
+
+            <Label text="StockDesk"
+                   style="-fx-text-fill: white;
+                          -fx-font-size: 26px;
+                          -fx-font-weight: bold;"/>
+
+            <Label text="Inventory &amp; Stock Movement Tracker"
+                   style="-fx-text-fill: #cbd5e1;
+                          -fx-font-size: 13px;"/>
+        </VBox>
+    </top>
+
+    <center>
+        <TabPane tabClosingPolicy="UNAVAILABLE">
+
+            <tabs>
+                <Tab text="Products">
+                    <content>
+                        <VBox spacing="15">
+
+                            <padding>
+                                <Insets top="20" bottom="20"
+                                        left="20" right="20"/>
+                            </padding>
+
+                            <Label text="Product Management"
+                                   style="-fx-font-size: 20px;
+                                          -fx-font-weight: bold;"/>
+
+                            <HBox spacing="10">
+                                <TextField fx:id="searchField"
+                                           promptText="Search products..."
+                                           HBox.hgrow="ALWAYS"/>
+
+                                <Button text="Add Product"/>
+                                <Button text="Edit"/>
+                                <Button text="Delete"/>
+                            </HBox>
+
+                            <TableView fx:id="productTable"
+                                       VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn text="ID" prefWidth="80"/>
+                                    <TableColumn text="Product Name" prefWidth="250"/>
+                                    <TableColumn text="Category" prefWidth="170"/>
+                                    <TableColumn text="Quantity" prefWidth="120"/>
+                                    <TableColumn text="Price" prefWidth="120"/>
+                                </columns>
+                            </TableView>
+
+                        </VBox>
+                    </content>
+                </Tab>
+
+                <Tab text="Stock Movements">
+                    <content>
+                        <VBox spacing="15">
+
+                            <padding>
+                                <Insets top="20" bottom="20"
+                                        left="20" right="20"/>
+                            </padding>
+
+                            <Label text="Stock Movement History"
+                                   style="-fx-font-size: 20px;
+                                          -fx-font-weight: bold;"/>
+
+                            <HBox spacing="10">
+                                <Button text="Stock IN"/>
+                                <Button text="Stock OUT"/>
+                            </HBox>
+
+                            <TableView VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn text="Movement ID" prefWidth="120"/>
+                                    <TableColumn text="Product" prefWidth="220"/>
+                                    <TableColumn text="Type" prefWidth="120"/>
+                                    <TableColumn text="Quantity" prefWidth="120"/>
+                                    <TableColumn text="Date" prefWidth="180"/>
+                                </columns>
+                            </TableView>
+
+                        </VBox>
+                    </content>
+                </Tab>
+            </tabs>
+
+        </TabPane>
+    </center>
+
+    <bottom>
+        <HBox style="-fx-background-color: #f1f5f9;">
+            <padding>
+                <Insets top="10" bottom="10" left="20" right="20"/>
+            </padding>
+
+            <Label text="StockDesk v1.0 | JavaFX Desktop Application"
+                   style="-fx-text-fill: #64748b;"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>
